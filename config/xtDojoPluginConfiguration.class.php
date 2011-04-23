@@ -5,8 +5,11 @@
  *
  * @package xtDojoPlugin
  * @subpackage config
+ * 
  * @author Sadikov Vladimir aka DMC <sadikoff@gmail.com>
- * @version 1.5
+ * @author Patrick Knut Leberecht <patrick.knut.leberecht@gmail.com>
+ * 
+ * @version 2.0 DEV
  */
 
 class xtDojoPluginConfiguration extends sfPluginConfiguration
@@ -21,24 +24,17 @@ class xtDojoPluginConfiguration extends sfPluginConfiguration
     $sf_web_dir = sfConfig::get('sf_web_dir');
 
     $parameters = array(
-
-      'xtDojo_fullPath'         => array (
-        'prod' => $sf_web_dir.'/js/framework',
-        'dev'  => $sf_web_dir.'/js/dojo/dev',
-        'src'  => $sf_web_dir.'/js/dojo/src',
-      ),
-
-      'xtDojo_buildScriptDir'   => '/util/buildscripts',
-      'xtDojo_profile'          => '/profiles/sf.profile.js',
-
-      'xtDojo_webPath'          => array (
-        'prod' => '/js/framework',
-        'dev'  => '/js/dojo/dev',
-        'src'  => '/js/dojo/src'
-      ),
-
-      'dojo_SDK_link' => 'http://download.dojotoolkit.org/release-{ver}/dojo-release-{ver}-src.tar.gz'
-
+        
+        'dojo_path'  => '/js/src/dojo',
+        'dojo_prod'  => '/js/apps',
+        
+        'dojo_cdn'   => array (
+            'aol'    => 'http://o.aolcdn.com/dojo/',
+            'google' => 'http://ajax.googleapis.com/ajax/libs/dojo/'
+        ),
+        
+        'dj_sdk_url' => 'http://download.dojotoolkit.org/release-{ver}/dojo-release-{ver}-src.tar.gz',
+        
     );
 
     sfConfig::add($parameters);

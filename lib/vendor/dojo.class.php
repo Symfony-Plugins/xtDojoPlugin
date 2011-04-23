@@ -5,7 +5,7 @@
  * @package xtDojoPlugin
  * @subpackage dojo
  * @author Sadikov Vladimir aka DMC <sadikoff@gmail.com>
- * @version 1.5
+ * @version 2.0
  */
 
 class dojo

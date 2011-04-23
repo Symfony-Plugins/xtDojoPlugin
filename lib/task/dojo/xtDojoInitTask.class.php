@@ -19,7 +19,9 @@ class xtDojoInitTask extends sfBaseTask
     $this->addOptions (array(
         new sfCommandOption('reinit', null, sfCommandOption::PARAMETER_NONE, 'Force re-initialization of dojo.'),
         new sfCommandOption('get-src', null, sfCommandOption::PARAMETER_NONE, 'downloads dojo SDK.'),
-        new sfCommandOption('ver', null, sfCommandOption::PARAMETER_OPTIONAL, 'dojo SDK version.','1.5.0'),
+        new sfCommandOption('type', null, sfCommandOption::PARAMETER_REQUIRED, 'Type of initialization ("static" or "cdn")'),
+        new sfCommandOption('cdn', null, sfCommandOption::PARAMETER_OPTIONAL, 'CDN ("google" or "aol").','google'),
+        new sfCommandOption('ver', null, sfCommandOption::PARAMETER_OPTIONAL, 'dojo SDK version.','1.6.0'),
     ));
 
     $this->namespace        = 'dojo';
@@ -40,9 +42,9 @@ Automaticaly download dojo sources from the internet and extract it.
 
   [./symfony dojo:init --get-src|INFO]
 
-Select dojo version to download.
+Define dojo version to download.
 
-  [./symfony dojo:init --get-src --ver=1.5.0]
+  [./symfony dojo:init --get-src --ver=1.5.0|INFO]
 
 EOF;
   }
@@ -55,9 +57,19 @@ EOF;
     $fileSystem = new xtDojoFileSystem($this->dispatcher, $this->formatter);
 
     $flag = false;
+    
+    $installFile = sfConfig::get('sf_config_dir').'/dojo.ini';
 
-    $installFile = sfConfig::get('sf_data_dir').'/.dojo_installed';
-
+    // Validate the type of init
+    if (!in_array($options['type'], array('static', 'cdn'))) {
+      throw new sfCommandException(sprintf('The cdn name "%s" is invalid. Only "google" and "aol" accepted.', $arguments['cdn']));
+    }
+    
+    // Validate the CDN name
+    if (!in_array($options['cdn'], array('google', 'aol'))) {
+      throw new sfCommandException(sprintf('The cdn name "%s" is invalid. Only "google" and "aol" accepted.', $arguments['cdn']));
+    }
+    
     // Validate dojo version
     if (!preg_match('@^[0-9]{1}\.[0-9]{1}\.[0-9]{1}([0-9]{1})?((b|rc)?[0-9]{1}([0-9]{1})?)?$@is', $options['ver']))
     {
@@ -84,77 +96,77 @@ EOF;
     }
     // load all the plugin configuraton
     $this->configuration->loadPlugins();
-
-    $paths = sfConfig::get('xtDojo_fullPath');
-    $webDir = sfConfig::get('sf_web_dir');
-
-    foreach ($paths as $key => $path)
-    {
-      if ($key == 'prod') continue;
-      
-      if ($flag)
-      {
-        $files = sfFinder::type('file')->in($path);
-        $dirs  = sfFinder::type('dir')->in($path);
-
-        $fileSystem->remove($files);
-        $fileSystem->remove($dirs);
-        $fileSystem->remove($path);
-      }
-      $fileSystem->mkdirs($path);
-    }
-
-    $mainJSFile = $paths['dev'].'/main.js';
-    if (!is_file($mainJSFile))
-    {
-      $fileSystem->generateMain();
-    }
-    else
-    {
-      $this->logSection('dojo', 'Dojo main.js allready exists.',null,'ERROR');
-    }
-
-    if (function_exists('curl_init'))
-    {
-      if ($options['get-src'])
-      {
-        $dojoSDK = array(
-            'downloadLink'  => str_replace('{ver}', $options['ver'], sfConfig::get('dojo_SDK_link')),
-            'localFilename' => sfConfig::get('sf_cache_dir').'/dojo-sdk.tgz',
-            'excludePath'   => 'dojo-release-'.$options['ver'].'-src'
-        );
-
-        if (!file_exists($dojoSDK['localFilename']))
-        {
-          $this->logSection('dojo', 'Sources archive not found. Initializing download....');
-          $fileSystem->getSources($dojoSDK['downloadLink'],$dojoSDK['localFilename']);
-        }
-
-        if (!file_exists($installFile))
-        {
-          $fileSystem->extractSources($dojoSDK['localFilename'], $paths['src'], $dojoSDK['excludePath']);
-        }
-        else
-        {
-          $this->logSection('dojo', 'Dojo has been allready extracted.');
-        }
-      }
-    }
-    else
-    {
-      $this->logSection('dojo', 'You must activate php_curl module before running this task with get-src option',null,'ERROR');
-    }
-    
-
-    $fileSystem->generateBuilder($flag);
-    if (!$flag)
-    {
-      $this->logBlock('Project configured. Now you must put dojo SDK sources(dojo,dojox,dijit,util folders) in '.$webDir.'/js/dojo/src folder.', 'INFO');
-    }
-    else
-    {
-      $this->logBlock('Project reconfigured. All data was delted. Now you must put dojo SDK sources(dojo,dojox,dijit,util folders) in '.$webDir.'/js/dojo/src folder, and rebuild dojo if needed.', 'INFO');
-    }
+//
+//    $paths = sfConfig::get('xtDojo_fullPath');
+//    $webDir = sfConfig::get('sf_web_dir');
+//
+//    foreach ($paths as $key => $path)
+//    {
+//      if ($key == 'prod') continue;
+//      
+//      if ($flag)
+//      {
+//        $files = sfFinder::type('file')->in($path);
+//        $dirs  = sfFinder::type('dir')->in($path);
+//
+//        $fileSystem->remove($files);
+//        $fileSystem->remove($dirs);
+//        $fileSystem->remove($path);
+//      }
+//      $fileSystem->mkdirs($path);
+//    }
+//
+//    $mainJSFile = $paths['dev'].'/main.js';
+//    if (!is_file($mainJSFile))
+//    {
+//      $fileSystem->generateMain();
+//    }
+//    else
+//    {
+//      $this->logSection('dojo', 'Dojo main.js allready exists.',null,'ERROR');
+//    }
+//
+//    if (function_exists('curl_init'))
+//    {
+//      if ($options['get-src'])
+//      {
+//        $dojoSDK = array(
+//            'downloadLink'  => str_replace('{ver}', $options['ver'], sfConfig::get('dojo_SDK_link')),
+//            'localFilename' => sfConfig::get('sf_cache_dir').'/dojo-sdk.tgz',
+//            'excludePath'   => 'dojo-release-'.$options['ver'].'-src'
+//        );
+//
+//        if (!file_exists($dojoSDK['localFilename']))
+//        {
+//          $this->logSection('dojo', 'Sources archive not found. Initializing download....');
+//          $fileSystem->getSources($dojoSDK['downloadLink'],$dojoSDK['localFilename']);
+//        }
+//
+//        if (!file_exists($installFile))
+//        {
+//          $fileSystem->extractSources($dojoSDK['localFilename'], $paths['src'], $dojoSDK['excludePath']);
+//        }
+//        else
+//        {
+//          $this->logSection('dojo', 'Dojo has been allready extracted.');
+//        }
+//      }
+//    }
+//    else
+//    {
+//      $this->logSection('dojo', 'You must activate php_curl module before running this task with get-src option',null,'ERROR');
+//    }
+//    
+//
+//    $fileSystem->generateBuilder($flag);
+//    if (!$flag)
+//    {
+//      $this->logBlock('Project configured. Now you must put dojo SDK sources(dojo,dojox,dijit,util folders) in '.$webDir.'/js/dojo/src folder.', 'INFO');
+//    }
+//    else
+//    {
+//      $this->logBlock('Project reconfigured. All data was delted. Now you must put dojo SDK sources(dojo,dojox,dijit,util folders) in '.$webDir.'/js/dojo/src folder, and rebuild dojo if needed.', 'INFO');
+//    }
   }
 
 }
